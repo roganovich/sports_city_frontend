@@ -24,7 +24,7 @@ export default function Header() {
                     </ul>
                     <i className="mobile-nav-toggle d-xl-none bi bi-list"></i>
                 </nav>
-                <Link className="btn-getstarted" href="/registration">Начать</Link>
+                <Link className="btn-getstarted" href="/login">Начать</Link>
             </div>
         </header>
     );

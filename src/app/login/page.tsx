@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import Image from "next/image";
-import RegisterForm from "@components/RegisterForm";
+import LoginForm from "@components/LoginForm";
 
 export default function Page() {
   return (
       <div>
         <div className="page-title">
             <div className="container d-lg-flex justify-content-between align-items-center">
-                <h1 className="mb-2 mb-lg-0">Регистрация</h1>
+                <h1 className="mb-2 mb-lg-0">Авторизация</h1>
                 <nav className="breadcrumbs">
                     <ol>
                         <li><Link href="/">Главная</Link></li>
-                        <li className="current">Регистрация</li>
+                        <li className="current">Авторизация</li>
                     </ol>
                 </nav>
         </div>
@@ -23,7 +23,8 @@ export default function Page() {
               <div className="row gy-4">
                   <div className="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center contact"
                        data-aos="fade-up">
-                      <RegisterForm />
+                      <LoginForm />
+                      <Link className="btn-getstarted" href="/registration">Регистрация</Link>
                   </div>
                   <div className="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="100">
                       <Image

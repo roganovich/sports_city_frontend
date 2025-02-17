@@ -12,7 +12,7 @@ export default function Home() {
                           <h1>Спортивный город</h1>
                           <p>Приложение позволяющее пользователям бесплатно получать доступ к спортивным площадкам города, бронировать их, организовывать тренировки или турниры. вести страницу своей команды, приглашать других пользователей.</p>
                           <div className="d-flex">
-                              <Link className="btn-getstarted" href="/registration">Начать</Link>
+                              <Link className="btn-getstarted" href="/login">Начать</Link>
                           </div>
                       </div>
                       <div className="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="100">
