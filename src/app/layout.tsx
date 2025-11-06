@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+import AuthInfo from "@components/AuthInfo";
 import Header from '@components/Header';
 import Footer from '@components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Импорт стилей Bootstrap
@@ -16,16 +18,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-    <body
-        className={`service-details-page`}
-      >
-        <Header />
-        <main className="main">
-        {children}
-        </main>
-        <Footer />
-      </body>
-    </html>
+        <html lang="en">
+        <body
+            className={`service-details-page`}
+          >
+              <AuthInfo />
+              <Header />
+              <main className="main">
+              {children}
+              </main>
+              <Footer />
+          </body>
+        </html>
   );
 }

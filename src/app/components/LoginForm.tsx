@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'; // Import useEffect
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,14 +23,7 @@ export default function LoginForm() {
             // Сохраняем токен в localStorage
             localStorage.setItem('jwtToken', token);
             console.log('Авторизация успешна. Получили токен:', token);
-
-            const router = useRouter();
-
-            // Use useEffect to ensure the router is mounted
-            useEffect(() => {
-                router.push('/'); // Redirect to the home page after the component mounts
-            }, [router]); // Add router as a dependency
-
+            router.push('/'); // Redirect to the home page after successful authentication
         } else {
             console.error('Ошибка авторизации');
         }
