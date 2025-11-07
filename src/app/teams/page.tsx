@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getApiUrl } from '../utils/api';
 
 type Team = {
     id: number;
@@ -8,8 +9,8 @@ type Team = {
 
 export default async function Page() {
     // Асинхронный запрос к API
-    const res = await fetch('http://localhost:8000/api/teams');
-    const data: Field[] = await res.json();
+    const res = await fetch(getApiUrl('/api/teams'));
+    const data: Team[] = await res.json();
 
   return (
       <div>

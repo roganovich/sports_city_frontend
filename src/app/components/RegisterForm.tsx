@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getApiUrl } from '../utils/api';
 
 export default function RegisterForm() {
     const [name, setName] = useState('');
@@ -9,7 +10,7 @@ export default function RegisterForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const response = await fetch('http://localhost:8000/api/auth/create', {
+        const response = await fetch(getApiUrl('/api/auth/create'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

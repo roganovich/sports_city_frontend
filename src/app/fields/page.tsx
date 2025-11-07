@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getApiUrl } from '../utils/api';
 
 type Field = {
     id: number;
@@ -8,7 +9,7 @@ type Field = {
 
 export default async function Page() {
     // Асинхронный запрос к API
-    const res = await fetch('http://localhost:8000/api/fields');
+    const res = await fetch(getApiUrl('/api/fields'));
     const data: Field[] = await res.json();
 
   return (

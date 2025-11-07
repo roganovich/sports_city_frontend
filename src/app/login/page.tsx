@@ -21,12 +21,11 @@ export default function Page() {
       <section id="registration" className="services section">
           <div className="container">
               <div className="row gy-4">
-                  <div className="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center contact"
+                  <div className="col-lg-4 order-2 order-lg-1 d-flex flex-column justify-content-center contact"
                        data-aos="fade-up">
                       <LoginForm />
-                      <Link className="btn-getstarted" href="/registration">Регистрация</Link>
                   </div>
-                  <div className="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="100">
+                  <div className="col-lg-8 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="100">
                       <Image
                           src="/registration.webp"
                           className="img-fluid"

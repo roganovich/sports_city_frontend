@@ -21,10 +21,14 @@ export default function Header() {
                         <li><Link href="/teams">Команды</Link></li>
                         <li><Link href="/informations">Информация</Link></li>
                         <li><Link href="/contacts">Контакты</Link></li>
+                    
+                        <i className="mobile-nav-toggle d-xl-none bi bi-list"></i>
+                    
+                        <li><Link href="/login">Войти</Link></li>
+                        <li><Link href="/registration">Регистрация</Link></li>
                     </ul>
-                    <i className="mobile-nav-toggle d-xl-none bi bi-list"></i>
                 </nav>
-                <Link className="btn-getstarted" href="/login">Начать</Link>
+
             </div>
         </header>
     );

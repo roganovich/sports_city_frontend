@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'; // Import useEffect
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '../utils/api';
 
 export default function LoginForm() {
     const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ export default function LoginForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const response = await fetch('http://localhost:8000/api/auth/login', {
+        const response = await fetch(getApiUrl('/api/auth/login'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
