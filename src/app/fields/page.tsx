@@ -5,6 +5,7 @@ type Field = {
     id: number;
     name: string;
     description: string;
+    slug: string;
 };
 
 export default async function Page() {
@@ -28,6 +29,11 @@ export default async function Page() {
 
           <section id="services" className="services section light-background">
               <div className="container">
+                <div className="d-flex mb-4">
+                    <Link href="/fields/create" className="btn-getstarted">
+                    Добавить новую площадку
+                    </Link>
+                </div>
                   <div className="row gy-4">
                       {data.map((item) => (
                           <div className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100"  key={item.id}>
@@ -35,9 +41,9 @@ export default async function Page() {
                                   <div className="icon">
                                       <i className="bi bi-activity"></i>
                                   </div>
-                                  <a href="service-details.html" className="stretched-link">
+                                  <Link href={`/fields/${item.slug}`} className="stretched-link">
                                       <h3>{item.name}</h3>
-                                  </a>
+                                  </Link>
                                   <p>{item.description}</p>
                               </div>
                           </div>

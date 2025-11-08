@@ -23,6 +23,8 @@ export default function LoginForm() {
             const token = await response.json();
             // Сохраняем токен в localStorage
             localStorage.setItem('jwtToken', token);
+            // Dispatch a custom event to notify other components of the auth change
+            window.dispatchEvent(new CustomEvent('authChange'));
             console.log('Авторизация успешна. Получили токен:', token);
             router.push('/'); // Redirect to the home page after successful authentication
         } else {

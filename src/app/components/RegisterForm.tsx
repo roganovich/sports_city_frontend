@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { getApiUrl } from '../utils/api';
 
 export default function RegisterForm() {
@@ -6,6 +7,7 @@ export default function RegisterForm() {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,14 +25,12 @@ export default function RegisterForm() {
             const token = await response.json();
             // Сохраняем токен в localStorage
             localStorage.setItem('jwtToken', token);
+            // Dispatch a custom event to notify other components of the auth change
+            window.dispatchEvent(new CustomEvent('authChange'));
             console.log('Регистрация успешна. Получили токен:', token);
-
-            return {
-                redirect: {
-                    destination: '/',
-                    permanent: false,
-                },
-            };
+            
+            // Redirect to the home page after successful registration
+            router.push('/');
         } else {
             console.error('Ошибка регистрации');
         }

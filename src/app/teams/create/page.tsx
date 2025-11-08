@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl } from '../../utils/api';
+import TeamForm from '../../components/TeamForm';
 
 type Team = {
     id: number;
@@ -50,37 +51,16 @@ export default function Page() {
                     <nav className="breadcrumbs">
                         <ol>
                             <li><Link href="/">Главная</Link></li>
-                            <li className="current">Список спортивных команд</li>
+                            <li><Link href="/teams">Список спортивных команд</Link></li>
+                            <li className="current">Создать свою команду</li>
                         </ol>
                     </nav>
                 </div>
             </div>
 
-            <section id="services" className="services section light-background">
+            <section className="section">
                 <div className="container">
-                    <div className="d-flex mb-4">
-                        <Link href="/teams/create" className="btn-getstarted">
-                            Создать свою команду
-                        </Link>
-                    </div>
-                    <div className="row gy-4">
-                        {teams.map((item) => (
-                            <div className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100" key={item.id}>
-                                <div className="service-item position-relative">
-                                    <div className="icon">
-                                        <i className="bi bi-activity"></i>
-                                    </div>
-                                    <a href="service-details.html" className="stretched-link">
-                                        <h3>{item.name}</h3>
-                                    </a>
-                                    <p>{item.description}</p>
-                                    <p><strong>Город:</strong> {item.city}</p>
-                                    <p><strong>Цвет формы:</strong> {item.uniform_color}</p>
-                                    <p><strong>Участников:</strong> {item.participant_count}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <TeamForm onTeamAdded={handleTeamAdded} />
                 </div>
             </section>
         </div>
