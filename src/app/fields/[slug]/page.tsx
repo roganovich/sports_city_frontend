@@ -1,5 +1,15 @@
 import Link from 'next/link';
 import { getApiUrl } from '../../utils/api';
+import Image from "next/image";
+
+interface MediaFile {
+  id: number;
+  name: string;
+  path: string;
+  ext: string;
+  size: number;
+  created_at: string;
+}
 
 // TypeScript type for the field DTO based on the backend structure
 type Field = {
@@ -18,8 +28,8 @@ type Field = {
   display: boolean;
   parking: boolean;
   for_disabled: boolean;
-  logo: string | null;
-  media: string | null;
+  logo: MediaFile | null;
+  media: MediaFile[] | null;
   status: number | null;
   created_at: string;
   updated_at: string;
@@ -32,7 +42,7 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
   const res = await fetch(getApiUrl(`/api/fields/${params.slug}`), {
     next: { revalidate: 60 } // Revalidate at most every 60 seconds
   });
-  
+
   // Handle 404 case
   if (!res.ok) {
     if (res.status === 404) {
@@ -50,7 +60,7 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
               </nav>
             </div>
           </div>
-          
+
           <section className="section">
             <div className="container">
               <div className="alert alert-warning" role="alert">
@@ -64,13 +74,13 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
         </div>
       );
     }
-    
+
     // Handle other errors
     throw new Error(`Failed to fetch field: ${res.status} ${res.statusText}`);
   }
-  
+
   const field: Field = await res.json();
-  
+
   return (
     <div>
       <div className="page-title">
@@ -85,33 +95,34 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
           </nav>
         </div>
       </div>
-      
+
       <section className="section">
         <div className="container">
           <div className="row">
-            <div className="col-lg-8">
+            <div className="col-lg-12">
               <div className="card">
                 <div className="card-body">
                   <h2 className="card-title">{field.name}</h2>
-                  
+
                   {field.logo && (
                     <div className="mb-4">
-                      <img 
-                        src={field.logo} 
-                        alt={`Логотип ${field.name}`} 
-                        className="img-fluid rounded" 
-                        style={{ maxHeight: '200px' }}
+                      <Image
+                        src={typeof field.logo?.name === 'string' ? getApiUrl(`/api/media/${field.logo.name}`) : '/file.svg'}
+                        className="img-fluid"
+                        alt=""
+                        width={400}
+                        height={400}
                       />
                     </div>
                   )}
-                  
+
                   {field.description && (
                     <div className="mb-4">
                       <h5>Описание</h5>
                       <p>{field.description}</p>
                     </div>
                   )}
-                  
+
                   <div className="row">
                     <div className="col-md-6">
                       <h5>Информация о площадке</h5>
@@ -122,7 +133,7 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
                         <li><strong>Количество мест:</strong> {field.places}</li>
                       </ul>
                     </div>
-                    
+
                     <div className="col-md-6">
                       <h5>Удобства</h5>
                       <ul className="list-unstyled">
@@ -149,14 +160,14 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
                       </ul>
                     </div>
                   </div>
-                  
+
                   {field.info && (
                     <div className="mt-4">
                       <h5>Дополнительная информация</h5>
                       <p>{field.info}</p>
                     </div>
                   )}
-                  
+
                   {field.location && (
                     <div className="mt-4">
                       <h5>Местоположение</h5>
@@ -166,21 +177,43 @@ export default async function FieldDetailPage({ params }: { params: { slug: stri
                 </div>
               </div>
             </div>
-            
-            <div className="col-lg-4">
-              {field.media && (
+
+            <div className="col-lg-12">
+              {field.media && field.media.length > 0 && (
                 <div className="card mt-4">
                   <div className="card-header">
                     <h5 className="card-title mb-0">Медиа</h5>
                   </div>
                   <div className="card-body">
-                    <div>Медиафайлы: {field.media}</div>
+                    <div className="row">
+                      {field.media.map((mediaItem, index) => (
+                        <div key={mediaItem.id || index} className="col-6 mb-3">
+                          <Image
+                            src={
+                              mediaItem?.name
+                                ? getApiUrl(`/api/media/${mediaItem.name}`)
+                                : '/file.svg'
+                            }
+                            className="img-fluid rounded"
+                            alt={`Media ${index + 1}`}
+                            width={200}
+                            height={200}
+                            style={{ objectFit: 'cover' }}
+                          />
+                          {mediaItem.name && (
+                            <small className="d-block text-muted text-center mt-1">
+                              {mediaItem.name}
+                            </small>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="mt-4">
             <Link href="/fields" className="btn btn-secondary">
               <i className="bi bi-arrow-left"></i> Назад к списку

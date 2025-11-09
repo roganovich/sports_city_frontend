@@ -13,15 +13,6 @@ type FieldFormProps = {
 };
 
 export default function FieldForm({ onFieldAdded }: FieldFormProps) {
-  // Function to convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
 
   // Function to fetch address suggestions
   const fetchAddressSuggestions = async (query: string) => {
@@ -56,17 +47,17 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       console.log('handleAddressChange called with event:', e);
-      
+
       const value = e.target.value;
       setAddress(value);
-      
+
       console.log('handleAddressChange', value);
 
       // Clear previous timeout
       if (addressTimeoutRef.current) {
         clearTimeout(addressTimeoutRef.current);
       }
-      
+
       // Set new timeout
       addressTimeoutRef.current = setTimeout(() => {
         fetchAddressSuggestions(value);
@@ -77,14 +68,14 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   };
 
   // Handle suggestion selection
-  const handleSuggestionSelect = (suggestion: {value: string, geo: {lat: string, lon: string}}) => {
+  const handleSuggestionSelect = (suggestion: { value: string, geo: { lat: string, lon: string } }) => {
     setAddress(suggestion.value);
     setShowSuggestions(false);
-    
+
     // Convert string coordinates to numbers
     const lat = parseFloat(suggestion.geo.lat);
     const lon = parseFloat(suggestion.geo.lon);
-    
+
     // Update map
     if (mapInstance && placemark) {
       // Set new coordinates
@@ -99,22 +90,22 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   const [description, setDescription] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
-  const [suggestions, setSuggestions] = useState<{value: string, geo: {lat: string, lon: string}}[]>([]);
+  const [suggestions, setSuggestions] = useState<{ value: string, geo: { lat: string, lon: string } }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAddressLoading, setIsAddressLoading] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [square, setSquare] = useState('');
   const [info, setInfo] = useState('');
-  const [places, setPlaces] = useState('0');
+  const [places, setPlaces] = useState('');
   const [dressing, setDressing] = useState(false);
   const [toilet, setToilet] = useState(false);
   const [display, setDisplay] = useState(false);
   const [parking, setParking] = useState(false);
   const [forDisabled, setForDisabled] = useState(false);
-  const [logo, setLogo] = useState<File | null>(null);
+  const [logo, setLogo] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [media, setMedia] = useState<File[]>([]);
+  const [media, setMedia] = useState<string[]>([]);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -141,7 +132,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   useEffect(() => {
     let isInitialized = false;
     let handleLoad: (() => void) | null = null;
-    
+
     // Check if map is already loaded and initialized
     if (typeof window !== 'undefined' && window.ymaps && mapRef.current && !mapInstance) {
       window.ymaps.ready(() => {
@@ -165,7 +156,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
             });
           }
         };
-        
+
         if (existingScript.getAttribute('data-loaded')) {
           handleLoad();
         } else {
@@ -189,7 +180,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         document.head.appendChild(script);
       }
     }
-    
+
     // Cleanup function
     return () => {
       isInitialized = true;
@@ -214,7 +205,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  
+
   const initializeMap = () => {
     if (mapRef.current && window.ymaps && !mapInstance) {
       // Check if a map is already initialized for this container
@@ -222,12 +213,12 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         // A map is already initialized, don't create a new one
         return;
       }
-      
+
       const map = new window.ymaps.Map(mapRef.current, {
         center: [55.7558, 37.6173], // Moscow coordinates as default
         zoom: 10
       });
-      
+
       // Create a placemark
       const newPlacemark = new window.ymaps.Placemark(
         [55.7558, 37.6173],
@@ -238,14 +229,14 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
           draggable: true
         }
       );
-      
+
       // Add event listener to placemark
       newPlacemark.events.add('dragend', (e: any) => {
         const coords = e.get('target').geometry.getCoordinates();
         setLatitude(coords[0]);
         setLongitude(coords[1]);
       });
-      
+
       // Add event listener to map
       map.events.add('click', (e: any) => {
         const coords = e.get('coords');
@@ -253,17 +244,46 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         setLatitude(coords[0]);
         setLongitude(coords[1]);
       });
-      
+
       map.geoObjects.add(newPlacemark);
       setMapInstance(map);
       setPlacemark(newPlacemark);
     }
   };
-  
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  // Создаем async функцию для обработки загрузки
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('jwtToken');
+
+    try {
+      const fetchPromise = fetch(getApiUrl('/api/media/preloader'), {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+        },
+        body: formData,
+      });
+
+      const response = await fetchPromise;
+
+      if (!response.ok) {
+        throw new Error('Ошибка загрузки файла');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Ошибка загрузки:', error);
+      throw error;
+    }
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
@@ -273,7 +293,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         }
         return;
       }
-      
+
       // Validate file size (e.g., max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Размер файла не должен превышать 5 МБ');
@@ -282,54 +302,74 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         }
         return;
       }
-      
-      setLogo(file);
-      setLogoPreview(URL.createObjectURL(file));
-      setError(null);
+
+      try {
+        const result = await uploadFile(file);
+        console.log('Файл загружен:', result);
+        setLogo(result.name);
+        setLogoPreview(URL.createObjectURL(file));
+        setError(null);
+      } catch (error) {
+        console.error('Ошибка загрузки файла:', error);
+        setError('Не удалось загрузить файл');
+      }
+
     } else {
       setLogo(null);
       setLogoPreview(null);
     }
   };
 
-  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      
-      // Validate file types
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/avi', 'video/mov'];
+
+      // Валидация типов файлов
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       const invalidFiles = files.filter(file => !validTypes.includes(file.type));
-      
+
       if (invalidFiles.length > 0) {
-        setError('Пожалуйста, выберите файлы в формате JPG, PNG, GIF, WEBP, MP4, AVI или MOV');
-        if (mediaInputRef.current) {
-          mediaInputRef.current.value = '';
+        setError('Пожалуйста, выберите изображения в формате JPG, PNG, GIF или WEBP');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
         return;
       }
-      
-      // Validate file sizes (e.g., max 10MB each)
-      const largeFiles = files.filter(file => file.size > 10 * 1024 * 1024);
-      
-      if (largeFiles.length > 0) {
-        setError('Размер каждого файла не должен превышать 10 МБ');
-        if (mediaInputRef.current) {
-          mediaInputRef.current.value = '';
+
+      // Валидация размера файлов
+      const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+      if (oversizedFiles.length > 0) {
+        setError('Размер каждого файла не должен превышать 5 МБ');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
         return;
       }
-      
-      setMedia(files);
-      
-      // Create previews for images
-      const previews = files.map(file => {
-        if (file.type.startsWith('image/')) {
-          return URL.createObjectURL(file);
-        }
-        return '';
-      });
-      setMediaPreviews(previews);
+
       setError(null);
+
+      try {
+        // Загружаем все файлы параллельно
+        const uploadPromises = files.map(file => uploadFile(file));
+        const results = await Promise.all(uploadPromises);
+
+        console.log('Все файлы загружены:', results);
+
+      // Обновляем состояние - сохраняем только имена файлов
+      const fileNames = results.map(result => result.name);
+      setMedia(prevMedia => [...prevMedia, ...fileNames]);
+
+        // Создаем превью
+        const previews = files.map(file => URL.createObjectURL(file));
+        setMediaPreviews(prevPreviews => [...prevPreviews, ...previews]);
+
+      } catch (error) {
+        console.error('Ошибка загрузки файлов:', error);
+        setError('Не удалось загрузить один или несколько файлов');
+      } finally {
+      }
+
     } else {
       setMedia([]);
       setMediaPreviews([]);
@@ -341,11 +381,8 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
-    
-    // Convert files to base64
-    const logoBase64 = logo ? await fileToBase64(logo) : null;
-    const mediaBase64 = await Promise.all(media.map(file => fileToBase64(file)));
-    
+
+
     // Create JSON data
     const jsonData = {
       name,
@@ -355,42 +392,42 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
       location: (latitude !== null && longitude !== null) ? JSON.stringify({ latitude, longitude }) : null,
       square: square ? parseFloat(square) : null,
       info: info || null,
-      places: parseInt(places) || 0,
+      places: places ? parseInt(places) : null,
       dressing,
       toilet,
       display,
       parking,
       for_disabled: forDisabled,
-      logo: logoBase64,
-      media: mediaBase64
+      logo: logo,
+      media: media
     };
 
     try {
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-          setError('Требуется авторизация');
-          setIsSubmitting(false);
-          return;
-        }
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setError('Требуется авторизация');
+        setIsSubmitting(false);
+        return;
+      }
 
-      console.log('Sending request to:', getApiUrl('/api/fields'));
-      console.log('JSON data:', jsonData);
-      
+      // console.log('Sending request to:', getApiUrl('/api/fields'));
+      // console.log('JSON data:', jsonData);
+
       // Create a timeout promise
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout')), 10000)
       );
-      
+
       // Create the fetch promise
       const fetchPromise = fetch(getApiUrl('/api/fields'), {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token,
         },
         body: JSON.stringify(jsonData),
       });
-      
+
       // Race the fetch promise against the timeout
       const response = await Promise.race([fetchPromise, timeout]);
 
@@ -404,7 +441,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         setLongitude(null);
         setSquare('');
         setInfo('');
-        setPlaces('0');
+        setPlaces('');
         setDressing(false);
         setToilet(false);
         setDisplay(false);
@@ -414,12 +451,12 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         setLogoPreview(null);
         setMedia([]);
         setMediaPreviews([]);
-        
+
         // Вызов callback функции, если она передана
         if (onFieldAdded) {
           onFieldAdded();
         }
-        
+
         setSuccess('Площадка успешно добавлена!');
       } else {
         // Handle non-200 status codes
@@ -678,7 +715,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
                 ) : (
                   <div key={index} className="position-relative">
                     <div className="bg-secondary d-flex align-items-center justify-content-center"
-                         style={{ width: '100px', height: '100px' }}>
+                      style={{ width: '100px', height: '100px' }}>
                       <span className="text-white">Видео</span>
                     </div>
                   </div>
@@ -707,13 +744,13 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
             {success}
           </div>
         )}
-        
+
         {error && (
           <div className="alert alert-danger" role="alert">
             {error}
           </div>
         )}
-        
+
         <button type="submit" className="btn btn-primary mt-4" disabled={isSubmitting}>
           {isSubmitting ? 'Добавление...' : 'Добавить площадку'}
         </button>
