@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getApiUrl } from '../utils/api';
 import Image from "next/image";
+import FieldItem from '../components/FieldItem';
 
 interface MediaFile {
   id: number;
@@ -11,18 +12,41 @@ interface MediaFile {
   created_at: string;
 }
 
-type Field = {
+interface Responsible {
+  id: number;
+  name: string;
+  email: string;
+}
+
+type FieldPageField = {
     id: number;
     name: string;
     description: string;
+    city: string;
+    address: string;
+    location: string | null;
+    square: number | null;
+    info: string | null;
+    places: number | null;
+    dressing: boolean;
+    toilet: boolean;
+    display: boolean;
+    parking: boolean;
+    for_disabled: boolean;
+    logo: MediaFile | null;
+    media: MediaFile[] | null;
     slug: string;
-    logo: MediaFile | null; // логотип теперь объект или null
+    status: number | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+    responsible: Responsible | null;
 };
 
 export default async function Page() {
     // Асинхронный запрос к API
     const res = await fetch(getApiUrl('/api/fields'));
-    const data: Field[] = await res.json();
+    const data: FieldPageField[] = await res.json();
 
   return (
       <div>
@@ -41,29 +65,13 @@ export default async function Page() {
           <section id="services" className="services section light-background">
               <div className="container">
                 <div className="d-flex mb-4">
-                    <Link href="/fields/create" className="btn-getstarted">
+                    <Link href="/fields/create" className="btn btn-success">
                     Добавить новую площадку
                     </Link>
                 </div>
                   <div className="row gy-4">
                       {data.map((item) => (
-                          <div className="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100"  key={item.id}>
-                              <div className="service-item position-relative">
-                                    <div className="col-lg-6 order-1 order-lg-2 hero-img" data-aos="zoom-out" data-aos-delay="100">
-                                        <Image
-                                            src={typeof item.logo?.name === 'string' ? getApiUrl(`/api/media/${item.logo.name}`) : '/file.svg'}
-                                            className="img-fluid"
-                                            alt=""
-                                            width={400}
-                                            height={400}
-                                        />
-                                    </div>
-                                  <Link href={`/fields/${item.slug}`} className="stretched-link">
-                                      <h3>{item.name}</h3>
-                                  </Link>
-                                  <p>{item.description}</p>
-                              </div>
-                          </div>
+                          <FieldItem key={item.id} item={item} />
                       ))}
                   </div>
               </div>

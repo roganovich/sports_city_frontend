@@ -8,12 +8,42 @@ declare global {
   }
 }
 
-type FieldFormProps = {
-  onFieldAdded?: () => void;
+interface MediaFile {
+  id: number;
+  name: string;
+  path: string;
+  ext: string;
+  size: number;
+  created_at: string;
+}
+
+type Field = {
+  id: number;
+  name: string;
+  description: string;
+  city: string;
+  address: string;
+  location: string | null;
+  square: number | null;
+  info: string | null;
+  places: number | null;
+  dressing: boolean;
+  toilet: boolean;
+  display: boolean;
+  parking: boolean;
+  for_disabled: boolean;
+  logo: MediaFile | null;
+  media: MediaFile[] | null;
+  slug: string;
 };
 
-export default function FieldForm({ onFieldAdded }: FieldFormProps) {
+type FieldEditFormProps = {
+  field: Field;
+  onFieldUpdated: (updatedField: Field) => void;
+  onCancel: () => void;
+};
 
+export default function FieldEditForm({ field, onFieldUpdated, onCancel }: FieldEditFormProps) {
   // Function to fetch address suggestions
   const fetchAddressSuggestions = async (query: string) => {
     if (query.length < 4) {
@@ -46,12 +76,8 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   // Debounced address input handler
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      console.log('handleAddressChange called with event:', e);
-
       const value = e.target.value;
       setAddress(value);
-
-      console.log('handleAddressChange', value);
 
       // Clear previous timeout
       if (addressTimeoutRef.current) {
@@ -86,26 +112,27 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
     }
   };
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
+  // Initialize form state with field data
+  const [name, setName] = useState(field.name);
+  const [description, setDescription] = useState(field.description || '');
+  const [city, setCity] = useState(field.city || '');
+  const [address, setAddress] = useState(field.address || '');
   const [suggestions, setSuggestions] = useState<{ value: string, geo: { lat: string, lon: string } }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isAddressLoading, setIsAddressLoading] = useState(false);
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
-  const [square, setSquare] = useState('');
-  const [info, setInfo] = useState('');
-  const [places, setPlaces] = useState('');
-  const [dressing, setDressing] = useState(false);
-  const [toilet, setToilet] = useState(false);
-  const [display, setDisplay] = useState(false);
-  const [parking, setParking] = useState(false);
-  const [forDisabled, setForDisabled] = useState(false);
-  const [logo, setLogo] = useState<string | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(field.location ? parseFloat(field.location.split(',')[0]) : null);
+  const [longitude, setLongitude] = useState<number | null>(field.location ? parseFloat(field.location.split(',')[1]) : null);
+  const [square, setSquare] = useState(field.square?.toString() || '');
+  const [info, setInfo] = useState(field.info || '');
+  const [places, setPlaces] = useState(field.places?.toString() || '');
+  const [dressing, setDressing] = useState(field.dressing || false);
+  const [toilet, setToilet] = useState(field.toilet || false);
+  const [display, setDisplay] = useState(field.display || false);
+  const [parking, setParking] = useState(field.parking || false);
+  const [forDisabled, setForDisabled] = useState(field.for_disabled || false);
+  const [logo, setLogo] = useState<MediaFile | null>(field.logo);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [media, setMedia] = useState<string[]>([]);
+  const [media, setMedia] = useState<MediaFile[]>(field.media || []);
   const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -118,17 +145,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   const [placemark, setPlacemark] = useState<any>(null);
   const addressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Debugging: Log when component mounts
-  useEffect(() => {
-    console.log('FieldForm component mounted');
-  }, []);
-
-  // Debugging: Log when component re-renders
-  useEffect(() => {
-    console.log('FieldForm component re-rendered');
-  });
-
-  // Initialize Yandex map
+  // Initialize map with field location
   useEffect(() => {
     let isInitialized = false;
     let handleLoad: (() => void) | null = null;
@@ -214,16 +231,20 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         return;
       }
 
+      // Use field location or default to Moscow
+      const centerLat = latitude || 55.7558;
+      const centerLon = longitude || 37.6173;
+
       const map = new window.ymaps.Map(mapRef.current, {
-        center: [55.7558, 37.6173], // Moscow coordinates as default
-        zoom: 10
+        center: [centerLat, centerLon],
+        zoom: 15
       });
 
-      // Create a placemark
+      // Create a placemark at the field location
       const newPlacemark = new window.ymaps.Placemark(
-        [55.7558, 37.6173],
+        [centerLat, centerLon],
         {
-          hintContent: 'Выберите местоположение площадки'
+          hintContent: 'Местоположение площадки'
         },
         {
           draggable: true
@@ -251,8 +272,8 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
     }
   };
 
-  // Создаем async функцию для обработки загрузки
-  const uploadFile = async (file) => {
+  // Upload file function
+  const uploadFile = async (file: File): Promise<MediaFile> => {
     const formData = new FormData();
     formData.append('file', file);
     const token = localStorage.getItem('jwtToken');
@@ -272,7 +293,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         throw new Error('Ошибка загрузки файла');
       }
 
-      const result = await response.json();
+      const result: MediaFile = await response.json();
       return result;
     } catch (error) {
       console.error('Ошибка загрузки:', error);
@@ -306,7 +327,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
       try {
         const result = await uploadFile(file);
         console.log('Файл загружен:', result);
-        setLogo(result.name);
+        setLogo(result);
         setLogoPreview(URL.createObjectURL(file));
         setError(null);
       } catch (error) {
@@ -320,12 +341,11 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
     }
   };
 
-
   const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
 
-      // Валидация типов файлов
+      // Validate types
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       const invalidFiles = files.filter(file => !validTypes.includes(file.type));
 
@@ -337,7 +357,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         return;
       }
 
-      // Валидация размера файлов
+      // Validate file sizes
       const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
       if (oversizedFiles.length > 0) {
         setError('Размер каждого файла не должен превышать 5 МБ');
@@ -350,17 +370,16 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
       setError(null);
 
       try {
-        // Загружаем все файлы параллельно
+        // Upload all files in parallel
         const uploadPromises = files.map(file => uploadFile(file));
         const results = await Promise.all(uploadPromises);
 
         console.log('Все файлы загружены:', results);
 
-      // Обновляем состояние - сохраняем только имена файлов
-      const fileNames = results.map(result => result.name);
-      setMedia(prevMedia => [...prevMedia, ...fileNames]);
+        // Update state - save MediaFile objects
+        setMedia(prevMedia => [...prevMedia, ...results]);
 
-        // Создаем превью
+        // Create previews
         const previews = files.map(file => URL.createObjectURL(file));
         setMediaPreviews(prevPreviews => [...prevPreviews, ...previews]);
 
@@ -382,14 +401,13 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
     setError(null);
     setSuccess(null);
 
-
     // Create JSON data
     const jsonData = {
       name,
       description: description || null,
       city,
       address,
-      location: (latitude !== null && longitude !== null) ? { latitude, longitude } : null,
+      location: (latitude !== null && longitude !== null) ? `${latitude},${longitude}` : null,
       square: square ? parseFloat(square) : null,
       info: info || null,
       places: places ? parseInt(places) : null,
@@ -398,8 +416,8 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
       display,
       parking,
       for_disabled: forDisabled,
-      logo: logo,
-      media: media
+      logo: logo ? logo.name : null,
+      media: media.map(mediaItem => mediaItem.name)
     };
 
     try {
@@ -410,17 +428,8 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         return;
       }
 
-      // console.log('Sending request to:', getApiUrl('/api/fields'));
-      // console.log('JSON data:', jsonData);
-
-      // Create a timeout promise
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
-      );
-
-      // Create the fetch promise
-      const fetchPromise = fetch(getApiUrl('/api/fields'), {
-        method: 'POST',
+      const response = await fetch(getApiUrl(`/api/fields/${field.slug}`), {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + token,
@@ -428,55 +437,22 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
         body: JSON.stringify(jsonData),
       });
 
-      // Race the fetch promise against the timeout
-      const response = await Promise.race([fetchPromise, timeout]);
-
-      if ((response as Response).ok) {
-        // Сброс формы после успешной отправки
-        setName('');
-        setDescription('');
-        setCity('');
-        setAddress('');
-        setLatitude(null);
-        setLongitude(null);
-        setSquare('');
-        setInfo('');
-        setPlaces('');
-        setDressing(false);
-        setToilet(false);
-        setDisplay(false);
-        setParking(false);
-        setForDisabled(false);
-        setLogo(null);
-        setLogoPreview(null);
-        setMedia([]);
-        setMediaPreviews([]);
-
-        // Вызов callback функции, если она передана
-        if (onFieldAdded) {
-          onFieldAdded();
-        }
-
-        setSuccess('Площадка успешно добавлена!');
+      if (response.ok) {
+        const updatedField = await response.json();
+        onFieldUpdated(updatedField);
+        setSuccess('Площадка успешно обновлена!');
       } else {
         // Handle non-200 status codes
-        const errorData = await (response as Response).json().catch(() => ({}));
-        const errorMessage = errorData.message || `Ошибка: ${(response as Response).status} ${(response as Response).statusText}`;
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `Ошибка: ${response.status} ${response.statusText}`;
         setError(errorMessage);
       }
     } catch (error: unknown) {
       console.error('Ошибка:', error);
       if (error instanceof TypeError) {
-        console.error('Network error details:', {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        });
-        setError('Ошибка сети. Проверьте подключение к серверу. Это может быть проблема с CORS или недоступностью сервера.');
-      } else if (error instanceof Error && error.message === 'Request timeout') {
-        setError('Превышено время ожидания ответа от сервера.');
+        setError('Ошибка сети. Проверьте подключение к серверу.');
       } else {
-        setError('Произошла ошибка при добавлении площадки: ' + (error as Error).message);
+        setError('Произошла ошибка при обновлении площадки: ' + (error as Error).message);
       }
     } finally {
       setIsSubmitting(false);
@@ -484,7 +460,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
   };
 
   return (
-    <div className="field-form-container">
+    <div className="field-edit-form-container">
       <style jsx>{`
         .hover-bg-light:hover {
           background-color: #f8f9fa;
@@ -493,7 +469,7 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
           cursor: pointer;
         }
       `}</style>
-      <h2>Добавить новую площадку</h2>
+      <h2>Редактировать площадку</h2>
       <form onSubmit={handleSubmit} className="field-form">
         <div className="form-group">
           <label htmlFor="name">Название площадки:</label>
@@ -577,7 +553,6 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
             )}
           </div>
         </div>
-
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ flex: 1, minWidth: '200px' }}>
@@ -679,10 +654,10 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
             className="form-control"
             accept="image/jpeg,image/png,image/gif,image/webp"
           />
-          {logoPreview && (
+          {(logoPreview || field.logo) && (
             <div className="mt-2">
               <img
-                src={logoPreview}
+                src={logoPreview || (field.logo ? getApiUrl(`/api/media/${field.logo.name}`) : '/file.svg')}
                 alt="Предпросмотр логотипа"
                 style={{ maxWidth: '200px', maxHeight: '200px' }}
               />
@@ -698,31 +673,31 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
             ref={mediaInputRef}
             onChange={handleMediaChange}
             className="form-control"
-            accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/avi,video/mov"
+            accept="image/jpeg,image/png,image/gif,image/webp"
             multiple
           />
-          {mediaPreviews.length > 0 && (
-            <div className="mt-2 d-flex flex-wrap gap-2">
-              {mediaPreviews.map((preview, index) => (
-                preview ? (
-                  <div key={index} className="position-relative">
-                    <img
-                      src={preview}
-                      alt={`Media preview ${index + 1}`}
-                      style={{ maxWidth: '100px', maxHeight: '100px' }}
-                    />
-                  </div>
-                ) : (
-                  <div key={index} className="position-relative">
-                    <div className="bg-secondary d-flex align-items-center justify-content-center"
-                      style={{ width: '100px', height: '100px' }}>
-                      <span className="text-white">Видео</span>
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          )}
+          <div className="mt-2 d-flex flex-wrap gap-2">
+            {/* Existing media */}
+            {field.media && field.media.map((mediaItem, index) => (
+              <div key={`existing-${index}`} className="position-relative">
+                <img
+                  src={getApiUrl(`/api/media/${mediaItem.name}`)}
+                  alt={`Media ${index + 1}`}
+                  style={{ maxWidth: '100px', maxHeight: '100px' }}
+                />
+              </div>
+            ))}
+            {/* New media previews */}
+            {mediaPreviews.map((preview, index) => (
+              <div key={`new-${index}`} className="position-relative">
+                <img
+                  src={preview}
+                  alt={`New media preview ${index + 1}`}
+                  style={{ maxWidth: '100px', maxHeight: '100px' }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Yandex Map */}
@@ -751,9 +726,14 @@ export default function FieldForm({ onFieldAdded }: FieldFormProps) {
           </div>
         )}
 
-        <button type="submit" className="btn btn-primary mt-4" disabled={isSubmitting}>
-          {isSubmitting ? 'Добавление...' : 'Добавить площадку'}
-        </button>
+        <div className="d-flex gap-2 mt-4">
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Сохранение...' : 'Сохранить изменения'}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            Отмена
+          </button>
+        </div>
       </form>
     </div>
   );
